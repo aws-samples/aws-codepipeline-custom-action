@@ -1,11 +1,6 @@
-## My Project
+## Amazon EC2 build environments with AWS CodePipeline and custom actions
 
-TODO: Fill this README out!
-
-Be sure to:
-
-* Change the title in this README
-* Edit your repository description on GitHub
+TBD
 
 ## License
 
