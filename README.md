@@ -30,9 +30,9 @@ Note that you need to provide the following parameters:
  Each deployment of the custom action has to have a distinct version number.
 
 ## Configuration
-Once custom action CloudFormation stack is deployed, you can add it to your CodePipelines
-either via AWS Console or CloudFormation. See
+Once CloudFormation stack is deployed, you can add the custom action to your CI/CD pipelines
+either via AWS Console or CloudFormation. See [AWS CodePipeline for Windows Server containers](https://github.com/aws-samples/aws-codepipeline-custom-action/tree/master/examples/windows-container-pipeline) for an example
+of using custom actions for building Windows Server containers. 
 
 ## License
-
 This library is licensed under the MIT-0 License. See the LICENSE file.
