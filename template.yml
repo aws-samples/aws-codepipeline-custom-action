@@ -51,7 +51,7 @@ Parameters:
   CustomActionProviderVersion:
     Type: String
     Description: Category of custom action provider (used in CodePipeline Console UI).
-    Default: 12
+    Default: 1
 
 Resources: 
 
@@ -127,7 +127,7 @@ Resources:
     Properties: 
       Category: !Ref CustomActionProviderCategory
       Provider: !Ref CustomActionProviderName
-      Version: 12
+      Version: !Ref CustomActionProviderVersion
       ConfigurationProperties: 
         - Name: ImageId 
           Description: AMI to use for EC2 build instances.
