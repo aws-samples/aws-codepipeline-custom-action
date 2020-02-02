@@ -62,6 +62,9 @@ def run_command(event):
             'outputArtifactPath': [output_artifact_path],
             'outputBucketName': [output_bucket_name],
             'outputObjectKey': [output_object_key]
+        },
+        CloudWatchOutputConfig={
+            'CloudWatchOutputEnabled': True
         }
     )
 

@@ -2,6 +2,7 @@ import os
 import json
 import uuid
 import boto3
+import traceback
 from enum import Enum
 
 # Environment Variables
@@ -62,85 +63,107 @@ def lambda_handler(event, context):
         return
 
     try:
-        # Call DescribeJobs
-        response = code_pipeline.poll_for_jobs(
-            actionTypeId={
-                'owner': 'Custom',
-                'category': CUSTOM_ACTION_PROVIDER_CATEGORY,
-                'provider': CUSTOM_ACTION_PROVIDER_NAME,
-                'version': CUSTOM_ACTION_PROVIDER_VERSION
-            },
-            maxBatchSize=10
-        )
+        jobs = get_active_jobs()
 
-        jobs = response.get('jobs', [])
         for job in jobs:
             job_id = job['id']
             continuation_token = get_job_attribute(job, 'continuationToken', '')
+            print(f'processing job: {job_id} with continuationToken: {continuation_token}')
 
-            print('processing job: ' + job_id + ' with continuationToken: ' + continuation_token)
+            try:
+                process_job(job, job_id, continuation_token)
+            except Exception:
+                print(f'error during processing job: {job_id}')
+                traceback.print_exc()
+                mark_job_failed(job_id, continuation_token)
 
-            # inform CodePipeline about that
-            ack_response = code_pipeline.acknowledge_job(
-                jobId=job_id,
-                nonce=job['nonce']
-            )
-            # print(json.dumps(ack_response, indent = 2))
+    except Exception:
+        traceback.print_exc()
+        raise
 
-            if not continuation_token:
-                print('this is a new job, start the flow')
 
-                # start job execution flow
-                execution_arn = start_job_flow(job_id, job)
+def process_job(job, job_id, continuation_token):
+    # inform CodePipeline about that
+    ack_response = code_pipeline.acknowledge_job(jobId=job_id, nonce=job['nonce'])
+    if not continuation_token:
+        print('this is a new job, start the flow')
+        start_new_job(job, job_id)
+    else:
+        # Get current job flow status
+        job_flow_status = get_job_flow_status(continuation_token)
+        print('current job status: ' + job_flow_status.name)
 
-                # report progress to have a proper link on the console 
-                # and "register" continuation token for subsequent jobs
-                progress_response = code_pipeline.put_job_success_result(
-                    jobId=job_id,
-                    continuationToken=execution_arn,
-                    executionDetails={
-                        'summary': 'Starting EC2 Build...',
-                        'externalExecutionId': execution_arn,
-                        'percentComplete': 0
-                    }
-                )
-            else:
-                # Get current job flow status
-                job_flow_status = get_job_flow_status(continuation_token)
-                print('current job status: ' + job_flow_status.name)
+        if job_flow_status == JobFlowStatus.Running:
+            mark_job_in_progress(job_id, continuation_token)
+        elif job_flow_status == JobFlowStatus.Succeeded:
+            mark_job_succeeded(job_id, continuation_token)
+        elif job_flow_status == JobFlowStatus.Failed:
+            mark_job_failed(job_id, continuation_token)
 
-                if job_flow_status == JobFlowStatus.Running:
-                    print('completing the job, preserving continuationToken')
-                    progress_response = code_pipeline.put_job_success_result(
-                        jobId=job_id,
-                        continuationToken=continuation_token
-                    )
-                elif job_flow_status == JobFlowStatus.Succeeded:
-                    print('completing the job')
-                    progress_response = code_pipeline.put_job_success_result(
-                        jobId=job_id,
-                        executionDetails={
-                            'summary': 'Finishing EC2 Build...',
-                            'externalExecutionId': continuation_token,
-                            'percentComplete': 100
-                        }
-                    )
-                elif job_flow_status == JobFlowStatus.Failed:
-                    print('mark job as failed')
-                    progress_response = code_pipeline.put_job_failure_result(
-                        jobId=job_id,
-                        failureDetails={
-                            'type': 'JobFailed',
-                            'message': 'Job Flow Failed miserably...',
-                            'externalExecutionId': continuation_token
-                        }
-                    )
 
-    except Exception as e:
-        print(e)
-        message = 'Error getting Batch Job status'
-        print(message)
-        raise Exception(message)
+def get_active_jobs():
+    # Call DescribeJobs
+    response = code_pipeline.poll_for_jobs(
+        actionTypeId={
+            'owner': 'Custom',
+            'category': CUSTOM_ACTION_PROVIDER_CATEGORY,
+            'provider': CUSTOM_ACTION_PROVIDER_NAME,
+            'version': CUSTOM_ACTION_PROVIDER_VERSION
+        },
+        maxBatchSize=10
+    )
+    jobs = response.get('jobs', [])
+    return jobs
+
+
+def start_new_job(job, job_id):
+    # start job execution flow
+    execution_arn = start_job_flow(job_id, job)
+    # report progress to have a proper link on the console
+    # and "register" continuation token for subsequent jobs
+    progress_response = code_pipeline.put_job_success_result(
+        jobId=job_id,
+        continuationToken=execution_arn,
+        executionDetails={
+            'summary': 'Starting EC2 Build...',
+            'externalExecutionId': execution_arn,
+            'percentComplete': 0
+        }
+    )
+
+
+def mark_job_failed(job_id, continuation_token):
+    print('mark job as failed')
+
+    failure_details = {
+        'type': 'JobFailed',
+        'message': 'Job Flow Failed miserably...'
+    }
+
+    if continuation_token:
+        failure_details['externalExecutionId'] = continuation_token
+
+    progress_response = code_pipeline.put_job_failure_result(jobId=job_id, failureDetails=failure_details)
+
+
+def mark_job_succeeded(job_id, continuation_token):
+    print('completing the job')
+    progress_response = code_pipeline.put_job_success_result(
+        jobId=job_id,
+        executionDetails={
+            'summary': 'Finishing EC2 Build...',
+            'externalExecutionId': continuation_token,
+            'percentComplete': 100
+        }
+    )
+
+
+def mark_job_in_progress(job_id, continuation_token):
+    print('completing the job, preserving continuationToken')
+    progress_response = code_pipeline.put_job_success_result(
+        jobId=job_id,
+        continuationToken=continuation_token
+    )
 
 
 def get_job_attribute(job, attribute, default):
