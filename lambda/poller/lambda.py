@@ -183,11 +183,11 @@ def get_job_flow_status(flow_id) -> JobFlowStatus:
 
 
 def start_job_flow(job_id, job):
-    # TODO: add validation
     input_artifacts = get_job_attribute(job, 'inputArtifacts', [])
     output_artifacts = get_job_attribute(job, 'outputArtifacts', [])
-    input_artifact = input_artifacts[0].get('location', {}).get('s3Location', {})
-    output_artifact = output_artifacts[0].get('location', {}).get('s3Location', {})
+
+    input_artifact = get_first_artifact(input_artifacts)
+    output_artifact = get_first_artifact(output_artifacts)
 
     configuration = get_job_attribute(job, 'actionConfiguration', {}).get('configuration', {})
     image_id = configuration.get('ImageId')
@@ -232,3 +232,10 @@ def start_job_flow(job_id, job):
     )
 
     return sfn_results.get('executionArn', '')
+
+
+def get_first_artifact(input_artifacts):
+    input_artifact = {}
+    if input_artifacts:
+        input_artifact = input_artifacts[0].get('location', {}).get('s3Location', {})
+    return input_artifact
