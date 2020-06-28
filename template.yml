@@ -410,7 +410,10 @@ Resources:
                         "inputObjectKey.$": "$.params.artifacts.input.objectKey",
                         "outputArtifactPath.$": "$.params.artifacts.output.path",
                         "outputBucketName.$": "$.params.artifacts.output.bucketName",
-                        "outputObjectKey.$": "$.params.artifacts.output.objectKey"
+                        "outputObjectKey.$": "$.params.artifacts.output.objectKey",
+                        "executionId.$": "$.params.pipeline.executionId",
+                        "pipelineArn.$": "$.params.pipeline.arn",
+                        "pipelineName.$": "$.params.pipeline.name"
                       },
                       "Next": "Wait Command Completion"
                     },
