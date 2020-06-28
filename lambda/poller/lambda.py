@@ -195,11 +195,20 @@ def start_job_flow(job_id, job):
     command_text = configuration.get('Command')
     working_directory = configuration.get('WorkingDirectory', '')
     output_artifact_path = configuration.get('OutputArtifactPath', '')
+    
+    # reference https://docs.aws.amazon.com/sdkfornet/v3/apidocs/items/CodePipeline/TPipelineContext.html
+    pipeline_context = get_job_attribute(job, 'pipelineContext', {})
+    pipeline_execution_id = pipeline_context.get('PipelineExecutionId')
+    pipeline_arn = pipeline_context.get('PipelineArn')
+    pipeline_name = pipeline_context.get('PipelineName')
 
     sfn_input = {
         "params": {
             "pipeline": {
-                "jobId": job_id
+                "jobId": job_id,
+                "executionId": pipeline_execution_id,
+                "arn": pipeline_arn,
+                "name": pipeline_name
             },
             "artifacts": {
                 "input": {
