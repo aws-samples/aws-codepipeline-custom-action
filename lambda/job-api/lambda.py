@@ -67,7 +67,7 @@ def run_command(event):
             'outputBucketName': [output_bucket_name],
             'outputObjectKey': [output_object_key],
             'executionId': [pipeline_execution_id],
-            'pipelineArn': [pipeline_arn]
+            'pipelineArn': [pipeline_arn],
             'pipelineName': [pipeline_name]
         },
         CloudWatchOutputConfig={
