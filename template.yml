@@ -194,6 +194,21 @@ Resources:
             description: "(Required) Specify the commands to run or the paths to existing scripts on the instance."
             type: String
             displayType: textarea
+          executionId:
+            description: "(Required) Specify the pipeline execution ID"
+            type: String
+            default: ''
+            maxChars: 4096
+          pipelineArn:
+            description: "(Required) Specify the pipeline ARN"
+            type: String
+            default: ''
+            maxChars: 4096
+          pipelineName:
+            description: "(Required) Specify the pipeline Name"
+            type: String
+            default: ''
+            maxChars: 4096
           workingDirectory:
             type: String
             default: ''
@@ -221,21 +236,6 @@ Resources:
             type: String
             default: '3600'
             allowedPattern: "([1-9][0-9]{0,3})|(1[0-9]{1,4})|(2[0-7][0-9]{1,3})|(28[0-7][0-9]{1,2})|(28800)"
-          executionId:
-            description: "(Required) Specify the pipeline execution ID"
-            type: String
-            default: ''
-            maxChars: 4096
-          pipelineArn:
-            description: "(Required) Specify the pipeline ARN"
-            type: String
-            default: ''
-            maxChars: 4096
-          pipelineName:
-            description: "(Required) Specify the pipeline Name"
-            type: String
-            default: ''
-            maxChars: 4096
         mainSteps:
           - name: win_enable_docker
             action: aws:configureDocker
@@ -300,6 +300,9 @@ Resources:
             action: aws:runShellScript
             inputs:
               runCommand:
+                - "export PipelineExecutionId={{ executionId }}"
+                - "export PipelineArn={{ pipelineArn }}"
+                - "export PipelineName={{ pipelineName }}"
                 - "aws s3 cp s3://{{ inputBucketName }}/{{ inputObjectKey }}  artifact.zip"
                 - "unzip artifact.zip"
                 - "{{ commands }}"
