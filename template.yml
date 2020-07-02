@@ -194,6 +194,21 @@ Resources:
             description: "(Required) Specify the commands to run or the paths to existing scripts on the instance."
             type: String
             displayType: textarea
+          executionId:
+            description: "(Required) Specify the pipeline execution ID"
+            type: String
+            default: ''
+            maxChars: 4096
+          pipelineArn:
+            description: "(Required) Specify the pipeline ARN"
+            type: String
+            default: ''
+            maxChars: 4096
+          pipelineName:
+            description: "(Required) Specify the pipeline Name"
+            type: String
+            default: ''
+            maxChars: 4096
           workingDirectory:
             type: String
             default: ''
@@ -236,6 +251,9 @@ Resources:
               runCommand:
                 # Ensure that if a command fails the script does not proceed to the following commands
                 - "$ErrorActionPreference = \"Stop\""
+                - "$ENV:PipelineExecutionId = \"{{ executionId }}\""
+                - "$ENV:PipelineArn = \"{{ pipelineArn }}\""
+                - "$ENV:PipelineName = \"{{ pipelineName }}\""
 
                 - "$jobDirectory = \"{{ workingDirectory }}\""
                 # Create temporary folder for build artifacts, if not provided
@@ -282,6 +300,9 @@ Resources:
             action: aws:runShellScript
             inputs:
               runCommand:
+                - "export PipelineExecutionId={{ executionId }}"
+                - "export PipelineArn={{ pipelineArn }}"
+                - "export PipelineName={{ pipelineName }}"
                 - "aws s3 cp s3://{{ inputBucketName }}/{{ inputObjectKey }}  artifact.zip"
                 - "unzip artifact.zip"
                 - "{{ commands }}"
@@ -410,7 +431,10 @@ Resources:
                         "inputObjectKey.$": "$.params.artifacts.input.objectKey",
                         "outputArtifactPath.$": "$.params.artifacts.output.path",
                         "outputBucketName.$": "$.params.artifacts.output.bucketName",
-                        "outputObjectKey.$": "$.params.artifacts.output.objectKey"
+                        "outputObjectKey.$": "$.params.artifacts.output.objectKey",
+                        "executionId.$": "$.params.pipeline.executionId",
+                        "pipelineArn.$": "$.params.pipeline.arn",
+                        "pipelineName.$": "$.params.pipeline.name"
                       },
                       "Next": "Wait Command Completion"
                     },

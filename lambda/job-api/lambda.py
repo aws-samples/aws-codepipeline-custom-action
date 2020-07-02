@@ -48,6 +48,10 @@ def run_command(event):
     output_artifact_path = event['outputArtifactPath']
     output_bucket_name = event['outputBucketName']
     output_object_key = event['outputObjectKey']
+    
+    pipeline_execution_id = event['executionId']
+    pipeline_arn = event['pipelineArn']
+    pipeline_name = event['pipelineName']
 
     # Send command to the builder instance
     response = ssm.send_command(
@@ -61,7 +65,10 @@ def run_command(event):
             'workingDirectory': [command_working_directory],
             'outputArtifactPath': [output_artifact_path],
             'outputBucketName': [output_bucket_name],
-            'outputObjectKey': [output_object_key]
+            'outputObjectKey': [output_object_key],
+            'executionId': [pipeline_execution_id],
+            'pipelineArn': [pipeline_arn],
+            'pipelineName': [pipeline_name]
         },
         CloudWatchOutputConfig={
             'CloudWatchOutputEnabled': True
