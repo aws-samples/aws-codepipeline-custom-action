@@ -3,7 +3,7 @@
 This repository provides serverless implementation of 
 [AWS CodePipeline custom actions](https://docs.aws.amazon.com/codepipeline/latest/userguide/actions-create-custom-action.html).
 
-The rationale behind this implementation is described in [Building Windows containers with AWS CodePipeline and custom actions]().
+The rationale behind this implementation is described in [Building Windows containers with AWS CodePipeline and custom actions](https://aws.amazon.com/blogs/devops/building-windows-containers-with-aws-codepipeline-and-custom-actions/).
 
 ## Arhitecture
 
