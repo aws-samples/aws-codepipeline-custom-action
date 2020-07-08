@@ -183,6 +183,7 @@ def get_job_flow_status(flow_id) -> JobFlowStatus:
 
 
 def start_job_flow(job_id, job):
+    # job model reference: https://boto3.amazonaws.com/v1/documentation/api/latest/reference/services/codepipeline.html#CodePipeline.Client.get_job_details
     input_artifacts = get_job_attribute(job, 'inputArtifacts', [])
     output_artifacts = get_job_attribute(job, 'outputArtifacts', [])
 
@@ -194,13 +195,12 @@ def start_job_flow(job_id, job):
     instance_type = configuration.get('InstanceType')
     command_text = configuration.get('Command')
     working_directory = configuration.get('WorkingDirectory', '')
-    output_artifact_path = configuration.get('OutputArtifactPath', '')
-    
-    # reference https://docs.aws.amazon.com/sdkfornet/v3/apidocs/items/CodePipeline/TPipelineContext.html
+    output_artifact_path = configuration.get('OutputArtifactPath', '')   
+
     pipeline_context = get_job_attribute(job, 'pipelineContext', {})
-    pipeline_execution_id = pipeline_context.get('PipelineExecutionId')
-    pipeline_arn = pipeline_context.get('PipelineArn')
-    pipeline_name = pipeline_context.get('PipelineName')
+    pipeline_execution_id = pipeline_context.get('pipelineExecutionId')
+    pipeline_arn = pipeline_context.get('pipelineArn')
+    pipeline_name = pipeline_context.get('pipelineName')
 
     sfn_input = {
         "params": {
