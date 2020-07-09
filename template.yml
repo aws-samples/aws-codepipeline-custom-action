@@ -53,6 +53,17 @@ Parameters:
 Resources: 
 
   # Supporting Lambda Functions 
+  JobCompletionHandler:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: Handles result of job flow execution.
+      CodeUri: lambda/job-completion-handler
+      Handler: lambda.lambda_handler
+      Runtime: python3.7
+      Role: !GetAtt JobCompletionHandlerExecutionRole.Arn
+      MemorySize: 128
+      Timeout: 15
+
   InstanceApi:
     Type: AWS::Serverless::Function
     Properties:
@@ -377,7 +388,9 @@ Resources:
                       "End": true
                     },
                     "Failed to Start": {
-                      "Type": "Fail"
+                      "Type": "Fail",
+                      "Error": "StartError",
+                      "Cause": "EC2 instance failed to start."
                     }
                   }
                 }
@@ -399,15 +412,11 @@ Resources:
                   "ErrorEquals": [
                     "States.ALL"
                   ],
+                  "ResultPath": "$.errorDetails",
                   "Next": "Report Completion"
                 }
               ],
-              "ResultPath": "$",
-              "Next": "Prepare Run Command Input"
-            },
-            "Prepare Run Command Input": {
-              "Type": "Pass",
-              "InputPath": "$[0]",
+              "OutputPath": "$[0]",
               "Next": "Run Command Flow"
             },
             "Run Command Flow": {
@@ -419,7 +428,6 @@ Resources:
                     "Start Command Execution": {
                       "Type": "Task",
                       "Resource": "${JobApi.Arn}",
-                      "InputPath": "$",
                       "ResultPath": "$.status.command",
                       "Parameters": {
                         "command": "run",
@@ -446,7 +454,6 @@ Resources:
                     "Check Command Status": {
                       "Type": "Task",
                       "Resource": "${JobApi.Arn}",
-                      "InputPath": "$",
                       "ResultPath": "$.status.command",
                       "Parameters": {
                         "command": "status",
@@ -476,7 +483,9 @@ Resources:
                       "End": true
                     },
                     "Failed to Complete": {
-                      "Type": "Fail"
+                      "Type": "Fail",
+                      "Error": "RunCommandError",
+                      "Cause": "SSM command completed with failures."
                     }
                   }
                 }
@@ -498,15 +507,11 @@ Resources:
                   "ErrorEquals": [
                     "States.ALL"
                   ],
-                  "ResultPath": null,
-                  "Next": "Prepare Release Builder Input"
+                  "ResultPath": "$.errorDetails",
+                  "Next": "Release Builder Flow"
                 }
               ],
-              "Next": "Prepare Release Builder Input"
-            },
-            "Prepare Release Builder Input": {
-              "Type": "Pass",
-              "InputPath": "$[0]",
+              "OutputPath": "$[0]",
               "Next": "Release Builder Flow"
             },
             "Release Builder Flow": {
@@ -563,7 +568,9 @@ Resources:
                       "End": true
                     },
                     "Failed to Stop": {
-                      "Type": "Fail"
+                      "Type": "Fail",
+                      "Error": "StopError",
+                      "Cause": "EC2 instance failed to stop."
                     }
                   }
                 }
@@ -585,14 +592,16 @@ Resources:
                   "ErrorEquals": [
                     "States.ALL"
                   ],
+                  "ResultPath": "$.errorDetails",
                   "Next": "Report Completion"
                 }
               ],
+              "OutputPath": "$[0]",
               "Next": "Report Completion"
             },
             "Report Completion": {
               "Type": "Task",
-              "Resource": "arn:aws:lambda:eu-west-1:305168429857:function:ec2-builders-codepipeline-api",
+              "Resource": "${JobCompletionHandler.Arn}"
               "End": true
             }
           }
@@ -600,6 +609,22 @@ Resources:
       RoleArn: !GetAtt Ec2BuilderStateMachineExecutionRole.Arn
 
   # Lambda Roles
+
+  JobCompletionHandlerExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service:
+                - lambda.amazonaws.com
+            Action:
+              - sts:AssumeRole
+      Path: "/"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole    
 
   CodePipelinePollerExecutionRole:
     Type: AWS::IAM::Role
