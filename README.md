@@ -34,5 +34,13 @@ Once CloudFormation stack is deployed, you can add the custom action to your CI/
 either via AWS Console or CloudFormation. See [AWS CodePipeline for Windows Server containers](https://github.com/aws-samples/aws-codepipeline-custom-action/tree/master/examples/windows-container-pipeline) for an example
 of using custom actions for building Windows Server containers. 
 
+## Environment variables available to the build scripts
+
+| Variable Name | Example | Description |
+|---------------|---------|-------------|
+| `PipelineArn` | arn:aws:codepipeline:eu-west-1:111111111111:windows-container-cicd-pipeline | The Amazon Resource Name (ARN) of the pipeline. |
+| `PipelineName` | windows-container-cicd-pipeline | The name of the pipeline. |
+| `PipelineExecutionId` | ced4b2c3-d4ee-4767-885d-30d45b94bfdf | The execution ID of the pipeline. |
+
 ## License
 This library is licensed under the MIT-0 License. See the LICENSE file.
