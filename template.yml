@@ -601,7 +601,7 @@ Resources:
             },
             "Report Completion": {
               "Type": "Task",
-              "Resource": "${JobCompletionHandler.Arn}"
+              "Resource": "${JobCompletionHandler.Arn}",
               "End": true
             }
           }
